@@ -5,7 +5,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const nodemailer = require('nodemailer');
 
 const app = express();
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:5177'] }));
+app.use(cors({ origin: ['http://localhost:5173', 'https://twistora.vercel.app'] }));
 app.use(express.json());
 
 // Email transporter
