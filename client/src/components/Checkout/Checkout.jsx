@@ -97,40 +97,45 @@ function Checkout() {
     return true;
   };
 
-  const placeOrder = async (e) => {
-    e.preventDefault();
-    setError('');
+ const placeOrder = async (e) => {
+  e.preventDefault();
+  setError('');
 
-    if (['jazzcash', 'easypaisa', 'nayapay'].includes(paymentMethod)) {
-      if (!validateReceipt()) return;
+  if (['jazzcash', 'easypaisa', 'nayapay'].includes(paymentMethod)) {
+    if (!validateReceipt()) return;
+  }
+
+  setProcessing(true);
+
+  try {
+    let receiptURL = null;
+    if (receiptFile) {
+      receiptURL = await uploadReceipt();
     }
 
-    setProcessing(true);
+    const order = {
+      user: user?.email || 'guest',
+      userId: user?.uid || 'guest',
+      customerDetails: form,
+      items: basket,
+      subtotal: total,
+      deliveryFee: deliveryFee,
+      total: grandTotal,
+      paymentMethod: paymentMethod,
+      paymentStatus: ['jazzcash', 'easypaisa', 'nayapay'].includes(paymentMethod)
+        ? 'pending'
+        : paymentMethod === 'cod'
+        ? 'cod'
+        : 'pending',
+      orderStatus: 'pending',
+      receiptURL: receiptURL || null,
+      createdAt: new Date(),
+    };
 
-    try {
-      let receiptURL = null;
-      if (receiptFile) {
-        receiptURL = await uploadReceipt();
-      }
+    const docRef = await addDoc(collection(db, 'orders'), order);
 
-      const order = {
-        user: user?.email || null,
-        userId: user?.uid || null,
-        customerDetails: form,
-        items: basket,
-        subtotal: total,
-        deliveryFee: deliveryFee,
-        total: grandTotal,
-        paymentMethod: paymentMethod,
-        paymentStatus: ['jazzcash', 'easypaisa', 'nayapay'].includes(paymentMethod) ? 'pending' : (paymentMethod === 'cod' ? 'cod' : 'pending'),
-        orderStatus: 'pending',
-        receiptURL: receiptURL || null,
-        createdAt: new Date(),
-      };
-
-      const docRef = await addDoc(collection(db, 'orders'), order);
-
-      // Email notification (non-blocking — order succeeds even if email fails)
+    // Email — sirf COD aur manual ke liye, online mein baad mein
+    if (paymentMethod !== 'online') {
       try {
         await fetch('http://localhost:4242/send-order-email', {
           method: 'POST',
@@ -143,13 +148,17 @@ function Checkout() {
 
       dispatch({ type: 'EMPTY_BASKET' });
       navigate(`/order-success/${docRef.id}`);
-
-    } catch (err) {
-      setError('Error placing order: ' + err.message);
-    } finally {
-      setProcessing(false);
+    } else {
+      // Online — Payment page par jao, basket mat hatao
+      navigate(`/payment/${docRef.id}`);
     }
-  };
+
+  } catch (err) {
+    setError('Error placing order: ' + err.message);
+  } finally {
+    setProcessing(false);
+  }
+};
 
   const isManualPayment = ['jazzcash', 'easypaisa', 'nayapay'].includes(paymentMethod);
 
@@ -171,22 +180,22 @@ function Checkout() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                   <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="Husna" required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]"/>
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                   <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Zaheer" required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]"/>
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="husna@email.com" required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]"/>
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+92 300 1234567" required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]"/>
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                 </div>
               </div>
             </div>
@@ -198,18 +207,18 @@ function Checkout() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                   <input type="text" name="address" value={form.address} onChange={handleChange} placeholder="House no, Street, Block" required
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]"/>
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                     <input type="text" name="city" value={form.city} onChange={handleChange} placeholder="Lahore" required
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]"/>
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
                     <input type="text" name="postalCode" value={form.postalCode} onChange={handleChange} placeholder="54000"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]"/>
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                   </div>
                 </div>
               </div>
@@ -220,7 +229,7 @@ function Checkout() {
               <h2 className="text-lg font-bold text-gray-800 mb-4">Payment Method</h2>
               <div className="flex flex-col gap-3">
                 <label className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition-colors ${paymentMethod === 'cod' ? 'border-[#f3a847] bg-orange-50' : 'border-gray-200'}`}>
-                  <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} className="accent-[#f3a847]"/>
+                  <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} className="accent-[#f3a847]" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-800">Cash on Delivery</p>
                     <p className="text-xs text-gray-500">Rs. 250 delivery fee — 3-5 days</p>
@@ -229,7 +238,7 @@ function Checkout() {
                 </label>
 
                 <label className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition-colors ${paymentMethod === 'online' ? 'border-[#f3a847] bg-orange-50' : 'border-gray-200'}`}>
-                  <input type="radio" name="paymentMethod" value="online" checked={paymentMethod === 'online'} onChange={() => setPaymentMethod('online')} className="accent-[#f3a847]"/>
+                  <input type="radio" name="paymentMethod" value="online" checked={paymentMethod === 'online'} onChange={() => setPaymentMethod('online')} className="accent-[#f3a847]" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-800">Card Payment (Stripe)</p>
                     <p className="text-xs text-gray-500">Free delivery — 3-5 days</p>
@@ -240,7 +249,7 @@ function Checkout() {
                 {/* Manual Payment Methods */}
                 {['jazzcash', 'easypaisa', 'nayapay'].map((method) => (
                   <label key={method} className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition-colors ${paymentMethod === method ? 'border-[#f3a847] bg-orange-50' : 'border-gray-200'}`}>
-                    <input type="radio" name="paymentMethod" value={method} checked={paymentMethod === method} onChange={() => setPaymentMethod(method)} className="accent-[#f3a847]"/>
+                    <input type="radio" name="paymentMethod" value={method} checked={paymentMethod === method} onChange={() => setPaymentMethod(method)} className="accent-[#f3a847]" />
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-800 capitalize">{method === 'jazzcash' ? 'JazzCash' : method === 'easypaisa' ? 'Easypaisa' : 'NayaPay'}</p>
                       <p className="text-xs text-gray-500">Manual wallet payment — Free delivery</p>
@@ -267,10 +276,10 @@ function Checkout() {
                   <div className="mt-4">
                     <label className="block text-xs font-semibold text-[#131921] uppercase tracking-wider mb-2">Upload Receipt Screenshot</label>
                     <input type="file" accept="image/*" onChange={handleReceiptChange}
-                      className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] bg-white"/>
+                      className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] bg-white" />
                     {receiptPreview && (
                       <div className="mt-2">
-                        <img src={receiptPreview} alt="Receipt preview" className="w-32 h-32 object-cover rounded-md border"/>
+                        <img src={receiptPreview} alt="Receipt preview" className="w-32 h-32 object-cover rounded-md border" />
                       </div>
                     )}
                   </div>
@@ -287,7 +296,7 @@ function Checkout() {
 
               {basket.map((item, index) => (
                 <div key={index} className="flex items-center gap-3 mb-3">
-                  <img src={item.image} alt={item.title} className="w-14 h-14 object-cover rounded-md"/>
+                  <img src={item.image} alt={item.title} className="w-14 h-14 object-cover rounded-md" />
                   <div className="flex-1">
                     <p className="text-xs font-medium text-gray-800 line-clamp-2">{item.title}</p>
                     <p className="text-sm font-bold text-gray-900">Rs. {item.price.toLocaleString()}</p>

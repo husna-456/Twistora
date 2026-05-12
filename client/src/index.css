@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+/* ── Swiper brand overrides ── */
+.product-slider .swiper-pagination-bullet {
+  background: #d1d5db;
+  opacity: 1;
+  width: 6px;
+  height: 6px;
+  transition: all 0.3s ease;
+}
+
+.product-slider .swiper-pagination-bullet-active {
+  background: #131921;
+  width: 22px;
+  border-radius: 3px;
+}
+
+.product-slider .swiper-slide {
+  height: auto;
+}
+
+/* ── Category marquee ── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  animation: marquee 28s linear infinite;
+  will-change: transform;
+}

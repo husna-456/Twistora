@@ -3,9 +3,10 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useStateValue } from '../../StateContext';
 import { db } from '../../firebase';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+
 import {
   ShoppingBag, Heart, Minus, Plus, Star,
-  ChevronRight, ArrowRight, Truck, Shield, RefreshCw
+  ChevronRight, Truck, Shield, RefreshCw
 } from 'lucide-react';
 import ProductCard from './ProductCard';
 
@@ -21,6 +22,7 @@ function ProductDetail() {
   const [activeTab, setActiveTab] = useState('description');
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [wishlisted, setWishlisted] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -35,7 +37,9 @@ function ProductDetail() {
         if (docSnap.exists()) {
           const data = { id: docSnap.id, ...docSnap.data() };
           setProduct(data);
-
+if (data.variants?.length > 0) {
+  setSelectedVariant(data.variants[0]);
+}
           // Fetch related products
           const allSnap = await getDocs(collection(db, 'products'));
           const all = allSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -53,17 +57,23 @@ function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  const addToBasket = () => {
-    for (let i = 0; i < quantity; i++) {
-      dispatch({
-        type: 'ADD_TO_BASKET',
-        item: product,
-      });
-    }
-  };
+ const addToBasket = () => {
+  for (let i = 0; i < quantity; i++) {
+    dispatch({
+      type: 'ADD_TO_BASKET',
+      item: {
+        ...product,
+        selectedVariant: selectedVariant || null,
+        image: selectedVariant?.image || product.image
+      },
+    });
+  }
+};
 
   // Build image gallery from product image + optional extra images
-  const images = product?.images?.length
+ const images = selectedVariant
+  ? [selectedVariant.image]
+  : product?.images?.length
     ? product.images
     : product?.image
       ? [product.image]
@@ -166,6 +176,32 @@ function ProductDetail() {
             <p className="text-gray-500 text-sm leading-relaxed mb-8">
               {product.description || 'Handcrafted with precision and care, this exquisite bracelet adds a touch of elegance to any ensemble. Made from premium materials with a timeless design that transcends trends.'}
             </p>
+            {product.variants?.length > 0 && (
+  <div className="mb-6">
+    <p className="text-xs uppercase tracking-widest text-gray-500 mb-3">
+      Select Color
+    </p>
+
+    <div className="flex gap-3">
+      {product.variants.map((variant, i) => (
+        <button
+          key={i}
+          onClick={() => {
+            setSelectedVariant(variant);
+            setActiveImage(0);
+          }}
+          className={`px-4 py-2 border text-xs uppercase tracking-wider transition ${
+            selectedVariant?.color === variant.color
+              ? 'border-[#f3a847] bg-[#f3a847] text-black'
+              : 'border-gray-200 text-gray-500 hover:border-[#131921]'
+          }`}
+        >
+          {variant.color}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
 
             {/* Quantity */}
             <div className="flex items-center gap-4 mb-6">

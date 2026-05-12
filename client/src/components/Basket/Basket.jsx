@@ -42,7 +42,7 @@ function Basket() {
                   className="bg-white rounded-lg p-4 flex gap-4 items-center"
                 >
                   <img
-                    src={item.image}
+                    src={item.selectedVariant?.image || item.image}
                     alt={item.title}
                     className="w-24 h-24 object-cover rounded-md"
                   />

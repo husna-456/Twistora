@@ -46,7 +46,7 @@ function CheckoutForm({ order, orderId }) {
         paymentId: paymentIntent.id,
       });
       try {
-        await fetch('http://localhost:4242/send-order-email', {
+        await fetch(`${import.meta.env.VITE_BACKEND_URL}/send-order-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order: { ...order, status: 'paid', paymentId: paymentIntent.id } }),

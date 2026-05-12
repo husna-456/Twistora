@@ -120,9 +120,6 @@ function Header() {
         <Link to="/shop" className="text-white text-sm px-3 py-1 hover:border hover:border-white rounded cursor-pointer whitespace-nowrap">
           Shop
         </Link>
-        <Link to="/pages" className="text-white text-sm px-3 py-1 hover:border hover:border-white rounded cursor-pointer whitespace-nowrap">
-          Pages
-        </Link>
         <Link to="/about" className="text-white text-sm px-3 py-1 hover:border hover:border-white rounded cursor-pointer whitespace-nowrap">
           About Us
         </Link>

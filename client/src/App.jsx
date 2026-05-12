@@ -12,7 +12,7 @@ import Orders from './components/Orders/Orders';
 import OrderSuccess from './components/Orders/OrderSuccess';
 import Shop from './components/Shop/Shop';
 import ProductDetail from './components/Product/ProductDetail';
-import Pages from './components/Pages/Pages';
+
 import About from './components/About/About';
 import Contact from './components/Contact/Contact';
 
@@ -39,7 +39,6 @@ function AppContent() {
         <Route path="/order-success/:orderId" element={<OrderSuccess />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/product/:id" element={<ProductDetail />} />
-        <Route path="/pages" element={<Pages />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
       </Routes>
