@@ -137,7 +137,7 @@ function Checkout() {
     // Email — sirf COD aur manual ke liye, online mein baad mein
     if (paymentMethod !== 'online') {
       try {
-        await fetch('http://localhost:4242/send-order-email', {
+        await fetch(`${import.meta.env.VITE_BACKEND_URL}/send-order-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order: { ...order, id: docRef.id } }),

@@ -141,7 +141,7 @@ function Payment() {
         const orderData = { id: orderDoc.id, ...orderDoc.data() };
         setOrder(orderData);
 
-        const res = await fetch('http://localhost:4242/create-payment-intent', {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/create-payment-intent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount: orderData.total * 100 }),
