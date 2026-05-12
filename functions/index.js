@@ -310,4 +310,33 @@ app.post('/send-verification-email', async (req, res) => {
   }
 });
 
+app.post('/send-contact-email', async (req, res) => {
+  const { name, email, subject, message } = req.body;
+  try {
+    await transporter.sendMail({
+      from: `"Twistora" <${process.env.EMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL,
+      subject: `New Contact Message: ${subject}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #131921; padding: 20px; text-align: center;">
+            <h1 style="color: #f3a847; margin: 0;">Twistora</h1>
+          </div>
+          <div style="padding: 30px; background: #f9f9f9;">
+            <h2 style="color: #333;">New Contact Message</h2>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Message:</strong></p>
+            <p style="background: white; padding: 15px; border-left: 3px solid #f3a847;">${message}</p>
+          </div>
+        </div>
+      `,
+    });
+    res.status(200).json({ message: 'Email sent!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(4242, () => console.log('Server running on port 4242'));
