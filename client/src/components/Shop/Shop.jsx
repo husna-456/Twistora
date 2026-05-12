@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo,startTransition } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../Product/ProductCard';
 import CategoryMarquee from './CategoryMarquee';
@@ -50,23 +50,20 @@ function Shop() {
     fetchProducts();
   }, []);
 
-  // ── SYNC URL PARAMS ──
  useEffect(() => {
   const urlSearch = searchParams.get('search') || '';
   const urlCategory = searchParams.get('category');
 
-  setSearchQuery(prev => prev !== urlSearch ? urlSearch : prev);
-
-  if (urlCategory && categories.includes(urlCategory)) {
-    setSelectedCategories(prev =>
-      prev[0] !== urlCategory ? [urlCategory] : prev
-    );
-  } else if (urlCategory === null) {
-    setSelectedCategories(prev =>
-      prev.length !== 0 ? [] : prev
-    );
-  }
+  startTransition(() => {
+    setSearchQuery(urlSearch);
+    setSelectedCategories(() => {
+      if (urlCategory && categories.includes(urlCategory)) return [urlCategory];
+      if (!urlCategory) return [];
+      return [];
+    });
+  });
 }, [searchParams, categories]);
+
 
   // ── SCROLL REVEAL ──
   useEffect(() => {
@@ -161,7 +158,7 @@ function Shop() {
           alt="Shop banner"
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/50 to-white/70" />
+        <div className="absolute inset-0 bg-linear-to-b from-white/40 via-white/50 to-white/70" />
         <div className="relative h-full flex flex-col items-center justify-center gap-2">
           <p className="text-[#f3a847] text-[10px] uppercase tracking-[0.5em] font-bold">
             Twistora Collection

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  MapPin, Phone, Mail, Clock, Send,
+  MapPin, Phone, Mail, Send,
   ArrowRight, MessageCircle
 } from 'lucide-react';
 import { db } from '../../firebase';
