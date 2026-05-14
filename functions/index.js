@@ -27,24 +27,23 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow server-to-server calls (no origin) aur allowed list
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         console.warn('[CORS] Blocked origin:', origin);
-        callback(new Error(`CORS: origin ${origin} not allowed`));
+        callback(null, false);
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
 
-// OPTIONS preflight ke liye
-// FIX: Express 5 + path-to-regexp v8 mein '*' crash karta hai.
-// '/{*path}' use karo — yeh Express 5 ka correct wildcard syntax hai.
-app.options('/{*path}', cors());
+// OPTIONS preflight — cors() middleware automatically handle karta hai
+// Note: app.options('*') hata diya — path-to-regexp version conflict se crash hota tha
 
 app.use(express.json());
 
