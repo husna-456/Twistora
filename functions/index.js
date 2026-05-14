@@ -13,14 +13,13 @@ const app = express();
 // ─────────────────────────────────────────────────────────────
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Startup check
 if (!process.env.SENDGRID_API_KEY) {
   console.error('❌ SENDGRID_API_KEY missing! Railway Variables mein add karo.');
 } else {
   console.log('✅ SendGrid ready. Sending as:', process.env.EMAIL_USER);
 }
 
-const FROM_EMAIL = process.env.EMAIL_USER;   // SendGrid mein verify ki hui email
+const FROM_EMAIL  = process.env.EMAIL_USER;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 // ─────────────────────────────────────────────────────────────
@@ -143,11 +142,9 @@ app.post('/send-order-email', async (req, res) => {
       subject: `Order Confirmed! #${safeId(order.id)}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-
           <div style="background:#131921;padding:20px;text-align:center;">
             <h1 style="color:#f3a847;margin:0;font-size:24px;letter-spacing:2px;">TWISTORA</h1>
           </div>
-
           <div style="padding:30px;background:#f9f9f9;">
             <h2 style="color:#333;">Order Confirmed! 🎉</h2>
             <p style="color:#666;">Hi ${order.customerDetails?.firstName || 'Customer'},<br>
@@ -184,11 +181,9 @@ app.post('/send-order-email', async (req, res) => {
               Delivery within <strong>3-5 business days</strong>! 🚚
             </p>
           </div>
-
           <div style="background:#131921;padding:15px;text-align:center;">
             <p style="color:#999;margin:0;font-size:12px;">© 2024 Twistora. All rights reserved.</p>
           </div>
-
         </div>
       `,
     });
@@ -201,15 +196,11 @@ app.post('/send-order-email', async (req, res) => {
       subject: `New Order — #${safeId(order.id)}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">
-
           <div style="background:#131921;padding:24px;text-align:center;">
             <h1 style="color:#f3a847;margin:0;font-size:22px;letter-spacing:2px;">TWISTORA</h1>
           </div>
-
           <div style="padding:32px 24px;">
-            <p style="color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">
-              Order #${safeId(order.id)}
-            </p>
+            <p style="color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Order #${safeId(order.id)}</p>
             <h2 style="color:#131921;margin:0 0 16px;">New Order Received</h2>
 
             <div style="background:#f9f9f9;padding:20px;margin-bottom:20px;">
@@ -234,11 +225,9 @@ app.post('/send-order-email', async (req, res) => {
               </div>
             </div>
           </div>
-
           <div style="background:#131921;padding:16px;text-align:center;">
             <p style="color:#888;margin:0;font-size:11px;">© 2024 TWISTORA</p>
           </div>
-
         </div>
       `,
     });
@@ -303,11 +292,9 @@ app.post('/send-status-email', async (req, res) => {
       subject: `${config.subject} — Order #${safeId(order.id)}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;">
-
           <div style="background:#131921;padding:24px;text-align:center;">
             <h1 style="color:#f3a847;margin:0;font-size:22px;letter-spacing:2px;">TWISTORA</h1>
           </div>
-
           <div style="padding:32px 24px;">
             <p style="color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Order #${safeId(order.id)}</p>
             <h2 style="color:#131921;margin:0 0 16px;">${config.headline}</h2>
@@ -329,11 +316,9 @@ app.post('/send-status-email', async (req, res) => {
               <p style="color:#131921;font-size:16px;font-weight:bold;margin:0;">#${safeId(order.id)}</p>
             </div>
           </div>
-
           <div style="background:#131921;padding:16px;text-align:center;">
             <p style="color:#888;margin:0;font-size:11px;">© 2024 TWISTORA. ALL RIGHTS RESERVED.</p>
           </div>
-
         </div>
       `,
     });
