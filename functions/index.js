@@ -1,7 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripeKey = process.env.STRIPE_SECRET_KEY || 'sk_test_missing';
+const stripe = require('stripe')(stripeKey);
 const sgMail = require('@sendgrid/mail');
 
 const app = express();
@@ -25,45 +26,20 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 // ─────────────────────────────────────────────────────────────
 // CORS
 // ─────────────────────────────────────────────────────────────
-const isAllowedOrigin = (origin) => {
-  if (!origin) return true;
-  if (origin.startsWith('http://localhost:')) return true;
-  if (origin.endsWith('.vercel.app') || origin === 'https://twistora.vercel.app') return true;
-  if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return true;
-  return false;
-};
-
-// Explicit OPTIONS handler — catches all preflight requests before CORS middleware
-app.use((req, res, next) => {
-  if (req.method !== 'OPTIONS') return next();
-  const origin = req.get('origin');
-  if (isAllowedOrigin(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
-  }
-  res.status(204).end();
-});
-
 app.use(
   cors({
     origin: (origin, callback) => {
-      const originStr = origin || '(none)';
-      if (isAllowedOrigin(origin)) {
-        callback(null, origin || true);
-      } else {
-        const allowedInfo = process.env.FRONTEND_URL
-          ? `Expected: localhost, *.vercel.app, or ${process.env.FRONTEND_URL}`
-          : 'Expected: localhost or *.vercel.app';
-        console.warn(`[CORS] Blocked origin: ${originStr}. ${allowedInfo}`);
-        callback(null, false);
-      }
+      if (!origin) return callback(null, true);
+      if (origin.startsWith('http://localhost:')) return callback(null, true);
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
+      if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return callback(null, true);
+      console.warn('[CORS] Blocked origin:', origin);
+      callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
   })
 );
 
