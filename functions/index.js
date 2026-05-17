@@ -12,12 +12,12 @@ const app = express();
 // Gmail SMTP Railway pe block karta hai (IPv6 + port restrictions)
 // SendGrid HTTPS API use karta hai — Railway pe always works
 // ─────────────────────────────────────────────────────────────
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-if (!process.env.SENDGRID_API_KEY) {
-  console.error('❌ SENDGRID_API_KEY missing! Railway Variables mein add karo.');
+const SENDGRID_READY = !!process.env.SENDGRID_API_KEY;
+if (SENDGRID_READY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('✅ SendGrid ready. Sending as:', process.env.EMAIL_USER || 'undefined');
 } else {
-  console.log('✅ SendGrid ready. Sending as:', process.env.EMAIL_USER);
+  console.error('❌ SENDGRID_API_KEY missing! Add it to Railway/Env variables.');
 }
 
 const FROM_EMAIL  = process.env.EMAIL_USER;
@@ -42,6 +42,9 @@ app.use(
     optionsSuccessStatus: 204,
   })
 );
+
+// ensure OPTIONS preflight requests are handled quickly
+app.options('*', cors());
 
 app.use(express.json());
 
@@ -116,6 +119,12 @@ app.post('/send-order-email', async (req, res) => {
   }
 
   console.log('[send-order-email] order:', safeId(order.id), '->', order.customerDetails.email);
+
+  if (!SENDGRID_READY || !FROM_EMAIL) {
+    const msg = !SENDGRID_READY ? 'SENDGRID_API_KEY missing' : 'EMAIL_USER (from) is not configured';
+    console.error('[send-order-email] configuration error:', msg);
+    return res.status(503).json({ error: 'Email service not configured', detail: msg });
+  }
 
   const paymentLabel =
     order.paymentMethod === 'cod'    ? 'Cash on Delivery' :
@@ -194,6 +203,8 @@ app.post('/send-order-email', async (req, res) => {
 
   // ── Admin email ──
   try {
+    if (!ADMIN_EMAIL) throw new Error('ADMIN_EMAIL not configured');
+
     await sgMail.send({
       from: { name: 'Twistora', email: FROM_EMAIL },
       to: ADMIN_EMAIL,
