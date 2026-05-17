@@ -36,12 +36,22 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 // ─────────────────────────────────────────────────────────────
 // CORS
 // ─────────────────────────────────────────────────────────────
-// Use permissive CORS for debugging (restrict later in production)
-app.use(cors());
+// Use permissive CORS for debugging, with explicit origin reflection.
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Explicit preflight handling for key POST routes.
+app.options(['/send-order-email', '/send-status-email', '/send-verification-email', '/send-contact-email', '/create-payment-intent'], cors(), (req, res) => {
+  res.sendStatus(204);
+});
 
 // Simple request logger to verify incoming requests in production
 app.use((req, res, next) => {
-  console.log('[request]', req.method, req.originalUrl, 'from', req.ip || req.connection?.remoteAddress);
+  console.log('[request]', req.method, req.originalUrl, 'origin=', req.headers.origin, 'from', req.ip || req.connection?.remoteAddress);
   next();
 });
 
