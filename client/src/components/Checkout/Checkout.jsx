@@ -179,22 +179,22 @@ function Checkout() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                  <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="Husna" required
+                  <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeholder="" required
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                  <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Zaheer" required
+                  <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="" required
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="husna@email.com" required
+                  <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="example@email.com" required
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+92 300 1234567" required
+                  <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="" required
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                 </div>
               </div>
@@ -212,7 +212,7 @@ function Checkout() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input type="text" name="city" value={form.city} onChange={handleChange} placeholder="Lahore" required
+                    <input type="text" name="city" value={form.city} onChange={handleChange} placeholder="" required
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-[#f3a847] focus:ring-1 focus:ring-[#f3a847]" />
                   </div>
                   <div>
