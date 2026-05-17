@@ -15,8 +15,26 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
-// Railway-friendly preflight/CORS handler: explicit OPTIONS route before any other middleware
-app.options('*', cors(corsOptions));
+// Railway-friendly manual preflight/CORS handler: run before any other middleware
+app.use((req, res, next) => {
+  const requestOrigin = req.headers.origin;
+  const allowedOrigin = FRONTEND_URL === '*' || requestOrigin === FRONTEND_URL ? requestOrigin : undefined;
+
+  if (allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', corsOptions.methods.join(','));
+  res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers'] || corsOptions.allowedHeaders.join(','));
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Vary', 'Origin');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(corsOptions.optionsSuccessStatus);
+  }
+
+  next();
+});
+
 app.use(cors(corsOptions));
 
 // Startup environment diagnostics (do not log secrets)
