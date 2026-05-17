@@ -510,7 +510,7 @@ app.use((err, req, res, _next) => {
 // ─────────────────────────────────────────────────────────────
 // START
 // ─────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 4242;
+const PORT = process.env.PORT || 8080;
 const HOST = '0.0.0.0';
 const server = app.listen(PORT, HOST, () => {
   console.log(`✅ Twistora server running on ${HOST}:${PORT}`);
