@@ -1,41 +1,40 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const stripeKey = process.env.STRIPE_SECRET_KEY || 'sk_test_missing';
 const stripe = require('stripe')(stripeKey);
 const sgMail = require('@sendgrid/mail');
 const app = express();
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://twistora.vercel.app';
-const corsOptions = {
-  origin: FRONTEND_URL === '*' ? true : FRONTEND_URL,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 204,
-};
+// Normalize to handle accidental trailing slash/space in Railway env var
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://twistora.vercel.app').trim().replace(/\/$/, '');
 
-// Railway-friendly manual preflight/CORS handler: run before any other middleware
+// Single authoritative CORS handler — runs before every other middleware.
+// Handles preflight (OPTIONS) inline so Railway never sees a missing CORS header.
 app.use((req, res, next) => {
   const requestOrigin = req.headers.origin;
-  const allowedOrigin = FRONTEND_URL === '*' || requestOrigin === FRONTEND_URL ? requestOrigin : undefined;
+  const allowedOrigin =
+    FRONTEND_URL === '*' || (requestOrigin && requestOrigin.trim().replace(/\/$/, '') === FRONTEND_URL)
+      ? requestOrigin
+      : null;
 
   if (allowedOrigin) {
     res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   }
-  res.setHeader('Access-Control-Allow-Methods', corsOptions.methods.join(','));
-  res.setHeader('Access-Control-Allow-Headers', req.headers['access-control-request-headers'] || corsOptions.allowedHeaders.join(','));
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    req.headers['access-control-request-headers'] || 'Content-Type,Authorization'
+  );
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Vary', 'Origin');
 
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(corsOptions.optionsSuccessStatus);
+    // Must use .end() — sendStatus() adds a text body which violates HTTP 204
+    return res.status(204).end();
   }
 
   next();
 });
-
-app.use(cors(corsOptions));
 
 // Startup environment diagnostics (do not log secrets)
 const DIAG = {
