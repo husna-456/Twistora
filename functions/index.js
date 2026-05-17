@@ -7,26 +7,17 @@ const sgMail = require('@sendgrid/mail');
 const app = express();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://twistora.vercel.app';
+const corsOptions = {
+  origin: FRONTEND_URL === '*' ? true : FRONTEND_URL,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
 
-// Railway-friendly preflight/CORS handler: run before any other middleware
-app.use((req, res, next) => {
-  const requestOrigin = req.headers.origin;
-  const allowedOrigin = FRONTEND_URL === '*' || requestOrigin === FRONTEND_URL ? requestOrigin : undefined;
-
-  if (allowedOrigin) {
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Vary', 'Origin');
-
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-
-  next();
-});
+// Railway-friendly preflight/CORS handler: explicit OPTIONS route before any other middleware
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
 
 // Startup environment diagnostics (do not log secrets)
 const DIAG = {
@@ -55,12 +46,8 @@ const FROM_EMAIL  = process.env.EMAIL_USER;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 // ─────────────────────────────────────────────────────────────
-// CORS
+// Request logger
 // ─────────────────────────────────────────────────────────────
-// Use permissive CORS for debugging (restrict later in production)
-app.use(cors());
-
-// Simple request logger to verify incoming requests in production
 app.use((req, res, next) => {
   console.log('[request]', req.method, req.originalUrl, 'from', req.ip || req.connection?.remoteAddress);
   next();
