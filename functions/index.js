@@ -7,6 +7,16 @@ const sgMail = require('@sendgrid/mail');
 
 const app = express();
 
+// Startup environment diagnostics (do not log secrets)
+const DIAG = {
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  PORT: process.env.PORT || '4242',
+  SENDGRID_KEY_PRESENT: !!process.env.SENDGRID_API_KEY,
+  FROM_EMAIL: !!process.env.EMAIL_USER,
+  ADMIN_EMAIL: !!process.env.ADMIN_EMAIL,
+};
+console.log('◇ startup diag', DIAG);
+
 // ─────────────────────────────────────────────────────────────
 // SENDGRID SETUP
 // Gmail SMTP Railway pe block karta hai (IPv6 + port restrictions)
