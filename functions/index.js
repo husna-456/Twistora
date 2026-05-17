@@ -26,26 +26,21 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 // ─────────────────────────────────────────────────────────────
 // CORS
 // ─────────────────────────────────────────────────────────────
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (origin.startsWith('http://localhost:')) return callback(null, true);
-      if (origin.endsWith('.vercel.app')) return callback(null, true);
-      if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return callback(null, true);
-      console.warn('[CORS] Blocked origin:', origin);
-      callback(null, false);
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 204,
-  })
-);
+// Use permissive CORS for debugging (restrict later in production)
+app.use(cors());
 
 // OPTIONS preflight are handled by the global CORS middleware above.
 
 app.use(express.json());
+
+// Global error handlers to avoid process exiting silently
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err && err.stack ? err.stack : err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
