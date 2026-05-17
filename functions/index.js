@@ -25,28 +25,44 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 // ─────────────────────────────────────────────────────────────
 // CORS
 // ─────────────────────────────────────────────────────────────
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://twistora.vercel.app',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (origin.startsWith('http://localhost:')) return true;
+  if (origin.endsWith('.vercel.app') || origin === 'https://twistora.vercel.app') return true;
+  if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return true;
+  return false;
+};
+
+// Explicit OPTIONS handler — catches all preflight requests before CORS middleware
+app.options('*', (req, res) => {
+  const origin = req.get('origin');
+  if (isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+  res.status(204).end();
+});
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
+      const originStr = origin || '(none)';
+      if (isAllowedOrigin(origin)) {
+        callback(null, origin || true);
       } else {
-        console.warn('[CORS] Blocked origin:', origin);
+        const allowedInfo = process.env.FRONTEND_URL
+          ? `Expected: localhost, *.vercel.app, or ${process.env.FRONTEND_URL}`
+          : 'Expected: localhost or *.vercel.app';
+        console.warn(`[CORS] Blocked origin: ${originStr}. ${allowedInfo}`);
         callback(null, false);
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
   })
 );
 
@@ -134,8 +150,12 @@ app.post('/send-order-email', async (req, res) => {
       ? 'FREE'
       : `Rs. ${safePrice(order.deliveryFee)}`;
 
+  let customerEmailSent = false;
+  let adminEmailSent = false;
+  const errors = [];
+
+  // ── Customer email ──
   try {
-    // ── Customer email ──
     await sgMail.send({
       from: { name: 'Twistora', email: FROM_EMAIL },
       to: order.customerDetails.email,
@@ -187,9 +207,16 @@ app.post('/send-order-email', async (req, res) => {
         </div>
       `,
     });
+    customerEmailSent = true;
     console.log('[send-order-email] customer email sent ✅');
+  } catch (error) {
+    const msg = error?.response?.body?.errors?.[0]?.message || error.message;
+    console.error('[send-order-email] customer email ❌', msg);
+    errors.push(`Customer email: ${msg}`);
+  }
 
-    // ── Admin email ──
+  // ── Admin email ──
+  try {
     await sgMail.send({
       from: { name: 'Twistora', email: FROM_EMAIL },
       to: ADMIN_EMAIL,
@@ -231,14 +258,29 @@ app.post('/send-order-email', async (req, res) => {
         </div>
       `,
     });
+    adminEmailSent = true;
     console.log('[send-order-email] admin email sent ✅');
-
-    res.status(200).json({ message: 'Emails sent successfully!' });
-
   } catch (error) {
     const msg = error?.response?.body?.errors?.[0]?.message || error.message;
-    console.error('[send-order-email] ❌', msg);
-    res.status(500).json({ error: msg });
+    console.error('[send-order-email] admin email ❌', msg);
+    errors.push(`Admin email: ${msg}`);
+  }
+
+  // ── Response ──
+  if (customerEmailSent && adminEmailSent) {
+    res.status(200).json({ message: 'Emails sent successfully!' });
+  } else if (customerEmailSent || adminEmailSent) {
+    res.status(200).json({
+      message: 'Partial success - some emails sent',
+      customerEmailSent,
+      adminEmailSent,
+      errors
+    });
+  } else {
+    res.status(500).json({
+      error: 'Failed to send emails',
+      errors
+    });
   }
 });
 
@@ -425,9 +467,18 @@ app.post('/send-contact-email', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// ERROR HANDLER
+// ─────────────────────────────────────────────────────────────
+app.use((err, req, res, _next) => {
+  console.error('[Unhandled Error]', err.message, err.stack);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+// ─────────────────────────────────────────────────────────────
 // START
 // ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4242;
-app.listen(PORT, () =>
-  console.log(`✅ Twistora server running on port ${PORT}`)
+const HOST = '0.0.0.0';
+app.listen(PORT, HOST, () =>
+  console.log(`✅ Twistora server running on ${HOST}:${PORT}`)
 );
