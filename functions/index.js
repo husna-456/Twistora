@@ -44,7 +44,8 @@ app.use(
 );
 
 // ensure OPTIONS preflight requests are handled quickly
-app.options('*', cors());
+// Use '/*' instead of '*' to avoid path-to-regexp parsing error
+app.options('/*', cors());
 
 app.use(express.json());
 
