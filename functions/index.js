@@ -4,8 +4,29 @@ const cors = require('cors');
 const stripeKey = process.env.STRIPE_SECRET_KEY || 'sk_test_missing';
 const stripe = require('stripe')(stripeKey);
 const sgMail = require('@sendgrid/mail');
-
 const app = express();
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://twistora.vercel.app';
+
+// Railway-friendly preflight/CORS handler: run before any other middleware
+app.use((req, res, next) => {
+  const requestOrigin = req.headers.origin;
+  const allowedOrigin = FRONTEND_URL === '*' || requestOrigin === FRONTEND_URL ? requestOrigin : undefined;
+
+  if (allowedOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Vary', 'Origin');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 
 // Startup environment diagnostics (do not log secrets)
 const DIAG = {
@@ -36,22 +57,12 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 // ─────────────────────────────────────────────────────────────
 // CORS
 // ─────────────────────────────────────────────────────────────
-// Use permissive CORS for debugging, with explicit origin reflection.
-app.use(cors({
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-
-// Explicit preflight handling for key POST routes.
-app.options(['/send-order-email', '/send-status-email', '/send-verification-email', '/send-contact-email', '/create-payment-intent'], cors(), (req, res) => {
-  res.sendStatus(204);
-});
+// Use permissive CORS for debugging (restrict later in production)
+app.use(cors());
 
 // Simple request logger to verify incoming requests in production
 app.use((req, res, next) => {
-  console.log('[request]', req.method, req.originalUrl, 'origin=', req.headers.origin, 'from', req.ip || req.connection?.remoteAddress);
+  console.log('[request]', req.method, req.originalUrl, 'from', req.ip || req.connection?.remoteAddress);
   next();
 });
 
