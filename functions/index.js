@@ -1,9 +1,29 @@
+// Catch startup crashes BEFORE anything else — a crash here gives 502 on every request
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err && err.stack ? err.stack : err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+
 require('dotenv').config();
 const express = require('express');
-const stripeKey = process.env.STRIPE_SECRET_KEY || 'sk_test_missing';
-const stripe = require('stripe')(stripeKey);
 const sgMail = require('@sendgrid/mail');
 const app = express();
+
+// Stripe — wrapped so a bad key never crashes the server at startup
+let stripe = null;
+try {
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  if (stripeKey) {
+    stripe = require('stripe')(stripeKey);
+    console.log('✅ Stripe ready');
+  } else {
+    console.warn('⚠️  STRIPE_SECRET_KEY not set — payment routes disabled');
+  }
+} catch (err) {
+  console.error('❌ Stripe init failed:', err.message);
+}
 
 // Normalize to handle accidental trailing slash/space in Railway env var
 const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://twistora.vercel.app').trim().replace(/\/$/, '');
@@ -72,15 +92,6 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// Global error handlers to avoid process exiting silently
-process.on('uncaughtException', (err) => {
-  console.error('[uncaughtException]', err && err.stack ? err.stack : err);
-});
-
-process.on('unhandledRejection', (reason) => {
-  console.error('[unhandledRejection]', reason);
-});
-
 // ─────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────
@@ -122,6 +133,7 @@ app.get('/', (req, res) => {
 // STRIPE
 // ─────────────────────────────────────────────────────────────
 app.post('/create-payment-intent', async (req, res) => {
+  if (!stripe) return res.status(503).json({ error: 'Payment service not configured — STRIPE_SECRET_KEY missing' });
   const { amount } = req.body;
   if (!amount || isNaN(amount)) {
     return res.status(400).json({ error: 'Valid amount is required' });
