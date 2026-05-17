@@ -34,7 +34,8 @@ const isAllowedOrigin = (origin) => {
 };
 
 // Explicit OPTIONS handler — catches all preflight requests before CORS middleware
-app.options('*', (req, res) => {
+app.use((req, res, next) => {
+  if (req.method !== 'OPTIONS') return next();
   const origin = req.get('origin');
   if (isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
