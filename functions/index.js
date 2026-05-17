@@ -39,7 +39,11 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 // Use permissive CORS for debugging (restrict later in production)
 app.use(cors());
 
-// OPTIONS preflight are handled by the global CORS middleware above.
+// Simple request logger to verify incoming requests in production
+app.use((req, res, next) => {
+  console.log('[request]', req.method, req.originalUrl, 'from', req.ip || req.connection?.remoteAddress);
+  next();
+});
 
 app.use(express.json());
 
@@ -471,6 +475,10 @@ app.use((err, req, res, _next) => {
 // ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4242;
 const HOST = '0.0.0.0';
-app.listen(PORT, HOST, () =>
-  console.log(`✅ Twistora server running on ${HOST}:${PORT}`)
-);
+const server = app.listen(PORT, HOST, () => {
+  console.log(`✅ Twistora server running on ${HOST}:${PORT}`);
+});
+
+server.on('error', (err) => {
+  console.error('[server error]', err && err.stack ? err.stack : err);
+});
